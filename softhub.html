@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>SoftMaster 50+ | Исправленная версия</title>
+    <style>
+        :root { --blue: #3b82f6; --dark: #0f172a; --card: #1e293b; }
+        body { background: var(--dark); color: white; font-family: sans-serif; margin: 0; display: flex; height: 100vh; }
+        
+        /* Боковая панель */
+        .sidebar { width: 250px; background: #1e293b; border-right: 1px solid #334155; padding: 20px; flex-shrink: 0; }
+        .sidebar button { 
+            width: 100%; padding: 12px; margin-bottom: 5px; background: transparent; 
+            color: #94a3b8; border: none; text-align: left; cursor: pointer; border-radius: 5px;
+        }
+        .sidebar button.active, .sidebar button:hover { background: var(--blue); color: white; }
+
+        /* Контент */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header { padding: 20px; background: #111827; display: flex; gap: 20px; align-items: center; border-bottom: 1px solid #334155; }
+        .search { padding: 10px; border-radius: 5px; border: 1px solid #334155; background: #0f172a; color: white; flex: 1; }
+        .dl-btn { background: #10b981; color: black; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        
+        .grid { padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; overflow-y: auto; }
+        .card { background: var(--card); padding: 15px; border-radius: 10px; border: 1px solid #334155; text-align: center; }
+        .card h3 { margin: 10px 0 5px; font-size: 16px; }
+        .card p { font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 style="color:var(--blue)">SoftHub</h2>
+        <button class="menu-btn active" data-cat="all">🚀 Все программы</button>
+        <button class="menu-btn" data-cat="browser">🌐 Браузеры</button>
+        <button class="menu-btn" data-cat="media">🎬 Мультимедиа</button>
+        <button class="menu-btn" data-cat="work">💼 Работа / Офис</button>
+        <button class="menu-btn" data-cat="coding">💻 Кодинг / IT</button>
+        <button class="menu-btn" data-cat="tools">🛠️ Утилиты</button>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <input type="text" id="searchInput" class="search" placeholder="Поиск программы...">
+            <button class="dl-btn" onclick="startDownload()">СКАЧАТЬ ВСЁ</button>
+        </div>
+        <div class="grid" id="appGrid">
+            </div>
+    </div>
+
+<script>
+    // База данных: 50 приложений
+    const apps = [
+        { n: "Google Chrome", c: "browser", d: "Браузер", u: "https://www.google.com/chrome/" },
+        { n: "Firefox", c: "browser", d: "Браузер", u: "https://www.mozilla.org/firefox/new/" },
+        { n: "Opera GX", c: "browser", d: "Браузер", u: "https://www.opera.com/gx" },
+        { n: "Telegram", c: "work", d: "Мессенджер", u: "https://telegram.org/dl/desktop/win64" },
+        { n: "Discord", c: "work", d: "Общение", u: "https://discord.com/api/download" },
+        { n: "VLC Player", c: "media", d: "Плеер", u: "https://get.videolan.org/vlc/3.0.20/win64/vlc-3.0.20-win64.exe" },
+        { n: "Spotify", c: "media", d: "Музыка", u: "https://download.scdn.co/SpotifySetup.exe" },
+        { n: "AIMP", c: "media", d: "Плеер", u: "http://www.aimp.ru/" },
+        { n: "VS Code", c: "coding", d: "Редактор", u: "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user" },
+        { n: "Python", c: "coding", d: "Язык", u: "https://www.python.org/ftp/python/3.12.1/python-3.12.1-amd64.exe" },
+        { n: "Steam", c: "tools", d: "Игры", u: "https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe" },
+        { n: "Epic Games", c: "tools", d: "Игры", u: "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/installer/download/EpicGamesLauncherInstaller.msi" },
+        { n: "7-Zip", c: "tools", d: "Архиватор", u: "https://www.7-zip.org/a/7z2301-x64.exe" },
+        { n: "WinRAR", c: "tools", d: "Архиватор", u: "https://www.win-rar.com/download.html" },
+        { n: "Blender", c: "coding", d: "3D Графика", u: "https://www.blender.org/download/" },
+        { n: "Notepad++", c: "coding", d: "Текст", u: "https://notepad-plus-plus.org/downloads/" },
+        { n: "WhatsApp", c: "work", d: "Связь", u: "https://www.whatsapp.com/download" },
+        { n: "Zoom", c: "work", d: "Встречи", u: "https://zoom.us/download" },
+        { n: "OBS Studio", c: "media", d: "Запись", u: "https://obsproject.com/download" },
+        { n: "AnyDesk", c: "tools", d: "Удаленно", u: "https://anydesk.com/download" },
+        { n: "WinAmp", c: "media", d: "Плеер", u: "https://www.winamp.com/" },
+        { n: "Node.js", c: "coding", d: "JS Среда", u: "https://nodejs.org/" },
+        { n: "Git", c: "coding", d: "Система", u: "https://git-scm.com/downloads" },
+        { n: "FileZilla", c: "coding", d: "FTP", u: "https://filezilla-project.org/" },
+        { n: "GIMP", c: "media", d: "Фото", u: "https://www.gimp.org/" },
+        { n: "Krita", c: "media", d: "Рисование", u: "https://krita.org/" },
+        { n: "Audacity", c: "media", d: "Звук", u: "https://www.audacityteam.org/" },
+        { n: "Skype", c: "work", d: "Звонки", u: "https://www.skype.com/" },
+        { n: "Teams", c: "work", d: "Офис", u: "https://www.microsoft.com/en-us/microsoft-teams/download-app" },
+        { n: "LibreOffice", c: "work", d: "Офис", u: "https://www.libreoffice.org/" },
+        { n: "qBittorrent", c: "tools", d: "Торрент", u: "https://www.qbittorrent.org/" },
+        { n: "Driver Booster", c: "tools", d: "Драйвера", u: "https://www.iobit.com/ru/driver-booster.php" },
+        { n: "CCleaner", c: "tools", d: "Очистка", u: "https://www.ccleaner.com/" },
+        { n: "Everything", c: "tools", d: "Поиск", u: "https://www.voidtools.com/" },
+        { n: "Putty", c: "coding", d: "Терминал", u: "https://www.putty.org/" },
+        { n: "Postman", c: "coding", d: "API тест", u: "https://www.postman.com/" },
+        { n: "Docker", c: "coding", d: "Контейнеры", u: "https://www.docker.com/" },
+        { n: "Unity Hub", c: "coding", d: "Игры", u: "https://unity.com/download" },
+        { n: "Figma", c: "media", d: "Дизайн", u: "https://www.figma.com/downloads/" },
+        { n: "Slack", c: "work", d: "Чат", u: "https://slack.com/download" },
+        { n: "Trello", c: "work", d: "Задачи", u: "https://trello.com/" },
+        { n: "Handbrake", c: "media", d: "Видео", u: "https://handbrake.fr/" },
+        { n: "VirtualBox", c: "coding", d: "Системы", u: "https://www.virtualbox.org/" },
+        { n: "TeamViewer", c: "tools", d: "Доступ", u: "https://www.teamviewer.com/" },
+        { n: "Recuva", c: "tools", d: "Файлы", u: "https://www.ccleaner.com/recuva" },
+        { n: "FastStone", c: "media", d: "Картинки", u: "https://www.faststone.org/" },
+        { n: "Inkscape", c: "media", d: "Вектор", u: "https://inkscape.org/" },
+        { n: "Total Commander", c: "tools", d: "Файлы", u: "https://www.ghisler.com/" },
+        { n: "PuTTY", c: "coding", d: "SSH", u: "https://www.chiark.greenend.org.uk/~sgtatham/putty/" },
+        { n: "CrystalDiskInfo", c: "tools", d: "Диск", u: "https://crystalmark.info/" }
+    ];
+
+    const grid = document.getElementById('appGrid');
+    const search = document.getElementById('searchInput');
+    const buttons = document.querySelectorAll('.menu-btn');
+
+    let currentCat = 'all';
+
+    // Функция отрисовки
+    function render() {
+        grid.innerHTML = '';
+        const query = search.value.toLowerCase();
+
+        apps.forEach(app => {
+            const matchCat = currentCat === 'all' || app.c === currentCat;
+            const matchSearch = app.n.toLowerCase().includes(query);
+
+            if (matchCat && matchSearch) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <h3>${app.n}</h3>
+                    <p>${app.d}</p>
+                    <input type="checkbox" class="app-check" value="${app.u}"> Выбрать
+                `;
+                grid.appendChild(card);
+            }
+        });
+    }
+
+    // Слушатель поиска
+    search.addEventListener('input', render);
+
+    // Слушатель кнопок меню
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCat = btn.getAttribute('data-cat');
+            render();
+        });
+    });
+
+    // Функция скачивания
+    function startDownload() {
+        const checked = document.querySelectorAll('.app-check:checked');
+        if (checked.length === 0) return alert('Ничего не выбрано!');
+        
+        checked.forEach((item, i) => {
+            setTimeout(() => window.open(item.value, '_blank'), i * 1200);
+        });
+    }
+
+    // Первый запуск
+    render();
+</script>
+</body>
+</html>
